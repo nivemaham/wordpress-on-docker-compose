@@ -1,6 +1,6 @@
 #!/bin/bash
 cd "$( dirname "${BASH_SOURCE[0]}" )"
-. "./backup.conf"
+. "backup.conf"
 
 # lock file
 lockfile=.LOCKFILE

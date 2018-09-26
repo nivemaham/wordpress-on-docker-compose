@@ -1,2 +1,0 @@
-android_phone_acceleration
-android_phone_gyroscope
