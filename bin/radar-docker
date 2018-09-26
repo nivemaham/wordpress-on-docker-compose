@@ -1,7 +1,7 @@
 #!/bin/bash
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-. ../.env
+. .env
 
 
 stack=${DOCKER_COMPOSE:-docker-compose}
@@ -45,14 +45,14 @@ shopt -s extglob
 
 case "${CMD}" in
 cert-renew)
-  . ../lib/util.sh
+  . ./lib/util.sh
   request_certificate "${SERVER_NAME}" "${SELF_SIGNED_CERT:-yes}" force
   ;;
 install)
-  . ../lib/perform-install.sh
+  . ./lib/perform-install.sh
   ;;
 install-systemd)
-  . ../lib/install-systemd-wrappers.sh
+  . ./lib/install-systemd-wrappers.sh
   ;;
 rebuild)
   exec $stack up -d --force-recreate --build --no-deps -V "$@"
@@ -64,7 +64,7 @@ quit)
   ;;
 
 foreground)
-  . ../lib/perform-install.sh
+  . ./lib/perform-install.sh
   exec $stack up "$@"
   ;;
 @(--help|-h))
