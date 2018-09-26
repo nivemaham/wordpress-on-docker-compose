@@ -60,80 +60,21 @@ http {
     access_log                /var/log/nginx/access.log;
     error_log                 /var/log/nginx/error.log;
 
-    location /kafka/ {
-      include cors.conf;
-      proxy_pass         http://gateway/radar-gateway/;
-      proxy_set_header   Host $host;
-      proxy_http_version 1.1;
-      proxy_set_header   Connection "";
-    }
-    location ^~ /kafka/consumers {
-      deny all;
-    }
-    location ^~ /kafka/brokers {
-      deny all;
-    }
-    location ~* /kafka/topics/.+/partitions {
-      deny all;
-    }
-    location /schema/ {
-      limit_except GET {
-        deny all;
-      }
-      proxy_pass         http://schema-registry-1:8081/;
-      proxy_set_header   Host $host;
-      proxy_http_version 1.1;
-      proxy_set_header   Connection "";
-    }
-    location /dashboard/ {
-      proxy_pass         http://dashboard:80/;
-      proxy_set_header   Host $host;
-    }
-    location /portainer/ {
-      include ip-access-control.conf;
+    root /var/www/html;
+    index index.php;
 
-      proxy_pass         http://portainer:9000/;
-      proxy_http_version 1.1;
-      proxy_set_header   Connection "";
+    location / {
+        try_files $uri $uri/ /index.php?$args;
     }
-    location /portainer/api/websocket/ {
-      include ip-access-control.conf;
-      proxy_pass         http://portainer:9000/api/websocket/;
-      proxy_set_header   Upgrade $http_upgrade;
-      proxy_set_header   Connection "upgrade";
-      proxy_http_version 1.1;
-    }
-    location /api/ {
-      include cors.conf;
-      proxy_pass         http://rest-api:8080/api/;
-      proxy_set_header   Host $host;
-    }
-    location /managementportal/ {
-      include cors.conf;
-      proxy_pass         http://managementportal-app:8080/managementportal/;
-      proxy_set_header   Host $host;
-    }
-    location /managementportal/oauth/ {
-      # Allow 20 fast-following requests, like when authorizing a user.
-      limit_req zone=login_limit burst=20;
-      include cors.conf;
-      proxy_pass         http://managementportal-app:8080/managementportal/oauth/;
-      proxy_set_header   Host $host;
-    }
-    location /managementportal/api/meta-token/ {
-      limit_req zone=login_limit;
-      include cors.conf;
-      proxy_pass         http://managementportal-app:8080/managementportal/api/meta-token/;
-      proxy_set_header   Host $host;
-    }
-    location /kafkamanager/{
-      include ip-access-control.conf;
-      auth_basic         "Kafka manager";
-      auth_basic_user_file kafka-manager.htpasswd;
 
-      proxy_pass         http://kafka-manager:9000;
-      proxy_set_header   Host $host;
+    location ~ \.php$ {
+        try_files $uri =404;
+        fastcgi_split_path_info ^(.+\.php)(/.+)$;
+        fastcgi_pass wordpress:9000;
+        fastcgi_index index.php;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        fastcgi_param PATH_INFO $fastcgi_path_info;
     }
-    include optional-services.conf;
   }
 }
