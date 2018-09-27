@@ -1,4 +1,4 @@
-# RADAR platform
+# WordPress protected by Ngnix
 
 This docker-compose stack contains a wordpress installation with mysql as database and protected by nginx. 
 
