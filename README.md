@@ -1,101 +1,58 @@
-# RADAR-Docker
+# RADAR platform
 
-The dockerized RADAR stack for deploying the RADAR-base platform. Component repositories can be found at [RADAR-base DockerHub org](https://hub.docker.com/u/radarbase/dashboard/)
+This docker-compose stack contains a wordpress installation with mysql as database and protected by nginx. 
 
-## Installation instructions 
-To install RADAR-base stack, do the following: 
+## Configuration
 
-1. Install [Docker Engine](https://docs.docker.com/engine/installation/)
-2. Install `docker-compose` using the [installation guide](https://docs.docker.com/compose/install/) or by following our [wiki](https://github.com/RADAR-base/RADAR-Docker/wiki/How-to-set-up-docker-on-ubuntu#install-docker-compose).
-3. Verify the Docker installation by running on the command-line:
+### Required
+This is the set of minimal configuration required to run the stack.
 
-    ```shell
-    docker --version
-    docker-compose --version
-    ```
-    This should show Docker version 1.12 or later and docker-compose version 1.9.0 or later.
-4. Install [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) for your platform.
-    1. For Ubuntu
+1. First copy `etc/env.template` file to `./.env` and check and modify all its variables.
 
-        ```shell
-        sudo apt-get install git
-        ```
-	
-5. Clone [RADAR-Docker](https://github.com/RADAR-base/RADAR-Docker) repository from GitHub.
-
-    ```shell
-    git clone https://github.com/RADAR-base/RADAR-Docker.git
-    ```
-
-6. Install required component stack following the instructions below.
-
+   1.1. To have a valid HTTPS connection for a public host, set `SELF_SIGNED_CERT=no`. You need to provide a public valid DNS name as `SERVER_NAME` for SSL certificate to work. IP addresses will not work.
+   
 ## Usage
 
-RADAR-Docker currently offers two component stacks to run.
-
-1. A Docker-compose for components from [Confluent Kafka Platform](http://docs.confluent.io/3.1.0/) community 
-2. A Docker-compose for components from RADAR-base platform.
-
-> **Note**: on macOS, remove `sudo` from all `docker` and `docker-compose` commands in the usage instructions below.
-
-### Confluent Kafka platform
-Confluent Kafka platform offers integration of the basic components for streaming such as Zookeeper, Kafka brokers, Schema registry and REST-Proxy. 
-
-Run this stack in a single-node setup on the command-line:
-
+Run
 ```shell
-cd RADAR-Docker/dcompose-stack/radar-cp-stack/
-sudo docker-compose up -d
+bin/radar-docker install
+```
+to start all the WordPress services. Use the `bin/radar-docker start|down|restart` to start, stop or reboot it. In general, `bin/radar-docker` is a convenience script to `docker-compose`, so all commands that work on docker-compose also work on `bin/radar-docker`. Note: whenever `.env` or `docker-compose.yml` are modified, the `install` command needs to be called again. To start a reduced set of containers, call `bin/radar-docker install` with the intended containers as arguments.
+
+To enable a `systemd` service to control the platform, run
+```shell
+bin/radar-docker install-systemd
+```
+After that command, the RADAR platform should be controlled via `systemctl`. When running as a user without `sudo` rights, in the following commands replace `sudo systemctl` with `systemctl --user`.
+```shell
+# query the latest status and logs
+sudo systemctl status radar-docker
+
+# Stop radar-docker
+sudo systemctl stop radar-docker
+
+# Restart all containers
+sudo systemctl reload radar-docker
+
+# Start radar-docker
+sudo systemctl start radar-docker
+
+# Full radar-docker system logs
+sudo journalctl -u radar-docker
+```
+The control scripts in this directory should preferably not be used if `systemctl` is used. To remove `systemctl` integration, run
+```
+sudo systemctl disable radar-docker
+sudo systemctl disable radar-renew-certificate
 ```
 
-To stop this stack, run:
+To rebuild an image and restart them, run `bin/radar-docker rebuild IMAGE`. To stop and remove an container, run `bin/radar-docker quit CONTAINER`. 
 
-```shell
-sudo docker-compose down
+### Certificate
+
+If systemd integration is enabled, the ssl certificate will be renewed daily. It can then be run directly by running
 ```
-
-### RADAR-base platform
-
-In addition to Confluent Kafka platform components, RADAR-base platform offers
-
-* RADAR-HDFS-Connector - Cold storage of selected streams in Hadoop data storage,
-* RADAR-MongoDB-Connector - Hot storage of selected streams in MongoDB,
-* [RADAR-Dashboard](https://github.com/RADAR-base/RADAR-Dashboard),
-* RADAR-Streams - real-time aggregated streams,
-* RADAR-Monitor - Status monitors,
-* [RADAR-HotStorage](https://github.com/RADAR-base/RADAR-HotStorage) via MongoDB, 
-* [RADAR-REST API](https://github.com/RADAR-base/RADAR-RestApi),
-* A Hadoop cluster, and
-* An email server.
-* Management Portal - A web portal to manage patient monitoring studies.
-* RADAR-Gateway - A validating gateway to allow only valid and authentic data to the platform
-* Catalog server - A Service to share source-types configured in the platform.
-To run RADAR-base stack in a single node setup:
-
-1. Navigate to `radar-cp-hadoop-stack`:
-
-    ```shell
-    cd RADAR-Docker/dcompose-stack/radar-cp-hadoop-stack/
-    ```
-2. Follow the README instructions there for correct configuration.
-
-### Logging
-
-Set up logging by going to the `dcompose-stack/logging` directory and follow the README there.
-
-## Work in progress
-
-The two following stacks will not work on with only Docker and docker-compose. For the Kerberos stack, the Kerberos image is not public. For the multi-host setup, also docker-swarm and Docker beta versions are needed.
-
-### Kerberized stack
-
-In this setup, Kerberos is used to secure the connections between the Kafka brokers, Zookeeper and the Kafka REST API. Unfortunately, the Kerberos container from Confluent is not publicly available, so an alternative has to be found here.
-
-```shell
-$ cd wip/radar-cp-sasl-stack/
-$ docker-compose up
+sudo systemctl start radar-renew-certificate.service
 ```
-
-### Multi-host setup
-
-In the end, we aim to deploy the platform in a multi-host environment. We are currently aiming for a deployment with Docker Swarm. This setup uses features that are not yet released in the stable Docker Engine. Once they are, this stack may become the main Docker stack. See the `wip/radar-swarm-cp-stack/` directory for more information.
+Otherwise, the following manual commands can be invoked.
+If `SELF_SIGNED_CERT=no` in `./.env`, be sure to run `bin/radar-cert-renew` daily to ensure that your certificate does not expire.
