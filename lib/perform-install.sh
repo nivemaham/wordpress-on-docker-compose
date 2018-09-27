@@ -22,6 +22,9 @@ sudo-linux chmod og-rwx ./etc
 check_parent_exists WP_MYSQL_DIR ${WP_MYSQL_DIR}
 check_parent_exists WORDPRESS_FILE_PATH ${WORDPRESS_FILE_PATH}
 
+# set wordpress location permission
+chmod 755 ${WORDPRESS_FILE_PATH}
+
 # Checking provided passwords and environment variables
 ensure_env_default SERVER_NAME localhost
 
